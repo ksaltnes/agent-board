@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Agent Board</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="bg" aria-hidden="true"></div>
+  <header class="top">
+    <div class="brand">
+      <span class="mark" aria-hidden="true"></span>
+      <h1>Agent Board</h1>
+    </div>
+    <p class="tag">Delt mandat · kompakt kontekst · lav tokenbruk</p>
+  </header>
+
+  <main>
+    <section class="mandate" id="mandate">
+      <div class="mandate-head">
+        <h2>Mandat</h2>
+        <button type="button" class="ghost" id="edit-mandate">Rediger</button>
+      </div>
+      <p class="goal" id="goal"></p>
+      <div class="meta-row">
+        <div>
+          <span class="lbl">Fokus</span>
+          <p id="focus"></p>
+        </div>
+        <div>
+          <span class="lbl">Ferdig når</span>
+          <p id="done-when"></p>
+        </div>
+      </div>
+      <ul class="rules" id="rules"></ul>
+    </section>
+
+    <section class="progress-block" id="progress">
+      <div class="prog-top">
+        <h2>Fremdrift</h2>
+        <span class="pct" id="pct">0%</span>
+      </div>
+      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="bar">
+        <i id="bar-fill"></i>
+      </div>
+      <div class="counts" id="counts"></div>
+    </section>
+
+    <section class="board">
+      <div class="board-head">
+        <h2>Tickets</h2>
+        <form id="new-ticket" class="new-ticket">
+          <input name="t" maxlength="120" placeholder="Ny ticket (tittel)" required autocomplete="off" />
+          <select name="p" title="Prioritet">
+            <option value="0">P0</option>
+            <option value="1" selected>P1</option>
+            <option value="2">P2</option>
+          </select>
+          <button type="submit">Opprett</button>
+        </form>
+      </div>
+      <div class="cols" id="cols"></div>
+    </section>
+
+    <section class="agents" id="agents-sec">
+      <h2>Agenter</h2>
+      <div class="agent-list" id="agents"></div>
+    </section>
+  </main>
+
+  <dialog id="mandate-dialog">
+    <form method="dialog" id="mandate-form">
+      <h3>Oppdater mandat</h3>
+      <label>Mål<textarea name="goal" rows="3"></textarea></label>
+      <label>Fokus<input name="focus" /></label>
+      <label>Ferdig når<textarea name="done" rows="2"></textarea></label>
+      <label>Regler (én per linje)<textarea name="rules" rows="4"></textarea></label>
+      <div class="dlg-actions">
+        <button type="submit" value="cancel" class="ghost">Avbryt</button>
+        <button type="submit" value="save">Lagre</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
