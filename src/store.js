@@ -3,7 +3,9 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-export const DATA_PATH = join(__dirname, '..', 'data', 'board.json');
+const BUNDLE_SEED = join(__dirname, '..', 'data', 'board.json');
+const DATA_DIR = process.env.DATA_DIR || dirname(BUNDLE_SEED);
+export const DATA_PATH = join(DATA_DIR, 'board.json');
 
 const STATUSES = new Set(['todo', 'doing', 'blocked', 'done']);
 
@@ -20,9 +22,11 @@ function emptyBoard() {
 export function load() {
   if (!existsSync(DATA_PATH)) {
     mkdirSync(dirname(DATA_PATH), { recursive: true });
-    const b = emptyBoard();
-    save(b);
-    return b;
+    if (DATA_PATH !== BUNDLE_SEED && existsSync(BUNDLE_SEED)) {
+      writeFileSync(DATA_PATH, readFileSync(BUNDLE_SEED));
+    } else {
+      save(emptyBoard());
+    }
   }
   return JSON.parse(readFileSync(DATA_PATH, 'utf8'));
 }
