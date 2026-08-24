@@ -17,6 +17,8 @@ import {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '..', 'public');
 const PORT = Number(process.env.PORT || 3847);
+const TOKEN = process.env.BOARD_TOKEN || '';
+const WRITE = new Set(['POST', 'PATCH', 'PUT', 'DELETE']);
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -73,8 +75,19 @@ function match(url, pattern) {
   return params;
 }
 
+function authorized(req) {
+  if (!TOKEN) return true;
+  const h = req.headers.authorization || '';
+  const bearer = h.startsWith('Bearer ') ? h.slice(7) : '';
+  const x = req.headers['x-board-token'] || '';
+  return bearer === TOKEN || x === TOKEN;
+}
+
 async function api(req, res, path, query) {
   try {
+    if (WRITE.has(req.method) && !authorized(req)) {
+      return send(res, 401, { err: 'token required' });
+    }
     if (req.method === 'GET' && path === '/v1/ctx') {
       const board = load();
       return send(res, 200, ctxPack(board, query.a || null));
@@ -145,6 +158,9 @@ async function api(req, res, path, query) {
       // Full board for UI (not for bots — use /ctx)
       return send(res, 200, load(), false);
     }
+    if (req.method === 'GET' && path === '/v1/health') {
+      return send(res, 200, { ok: 1 });
+    }
     if (req.method === 'GET' && path === '/v1/help') {
       return send(res, 200, {
         bot: {
@@ -154,6 +170,7 @@ async function api(req, res, path, query) {
           claim: 'POST /v1/tickets/T2/claim {"a":"builder"}',
           done: 'POST /v1/tickets/T2/done {"n":"shipped"}',
           mandate: 'PATCH /v1/mandate {"f":"new focus"}',
+          auth: TOKEN ? 'write: Authorization: Bearer $BOARD_TOKEN' : 'open',
         },
         keys: { t: 'title', s: 'status', a: 'agent', p: 'priority', d: 'deps', n: 'note≤140', g: 'goal', f: 'focus' },
       });
@@ -182,6 +199,10 @@ function staticFile(res, urlPath) {
 
 const server = createServer(async (req, res) => {
   const u = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+  if (u.pathname === '/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end('{"ok":1}');
+  }
   if (u.pathname.startsWith('/v1/')) {
     const query = Object.fromEntries(u.searchParams);
     return api(req, res, u.pathname, query);
@@ -191,7 +212,7 @@ const server = createServer(async (req, res) => {
   res.end();
 });
 
-server.listen(PORT, () => {
-  console.log(`agent-board http://127.0.0.1:${PORT}`);
-  console.log(`bots: GET /v1/ctx  |  help: GET /v1/help`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`agent-board http://0.0.0.0:${PORT}`);
+  console.log(`bots: GET /v1/ctx  |  help: GET /v1/help${TOKEN ? '  |  writes: BOARD_TOKEN' : ''}`);
 });
