@@ -13,6 +13,42 @@ npm start
 
 Data lives in [`data/board.json`](data/board.json) (file-backed; bots and humans share the same source of truth). Reset with `npm run seed`.
 
+## Deploy on Fly.io
+
+No ongoing free plan for new accounts. New orgs get a short **trial** (2 VM-hours or 7 days). After that, pay-as-you-go: the smallest always-on machine (`shared-cpu-1x` / 256 MB in `ams`) is about **$2/month** plus ~$0.15/month for a 1 GB volume. A card is required after the trial.
+
+```bash
+# 1. Install flyctl and log in: https://fly.io/docs/hands-on/install-flyctl/
+fly auth login
+
+# 2. Create the app (change the name if taken)
+fly apps create agent-board-ksaltnes
+# keep app = "agent-board-ksaltnes" in fly.toml in sync
+
+# 3. Persistent board file
+fly volumes create board_data --size 1 --region ams --yes
+
+# 4. Write token (required in production)
+fly secrets set BOARD_TOKEN="$(openssl rand -hex 16)"
+
+# 5. Deploy
+fly deploy
+fly open
+```
+
+Bots:
+
+```http
+GET https://<app>.fly.dev/v1/ctx?a=builder
+POST https://<app>.fly.dev/v1/tickets/T2/claim
+Authorization: Bearer $BOARD_TOKEN
+{"a":"builder"}
+```
+
+UI: paste the same token in the header field (stored in the browser). Reads stay public; writes need the token when `BOARD_TOKEN` is set.
+
+CI: add repo secret `FLY_API_TOKEN` (`fly tokens create deploy`) so pushes to `main` deploy via [`.github/workflows/fly.yml`](.github/workflows/fly.yml).
+
 ## Bot workflow (minimal tokens)
 
 1. **Pull context once**
@@ -24,6 +60,7 @@ Data lives in [`data/board.json`](data/board.json) (file-backed; bots and humans
 2. **Claim**
    ```http
    POST /v1/tickets/T2/claim
+   Authorization: Bearer $BOARD_TOKEN
    {"a":"builder"}
    ```
 
@@ -80,3 +117,4 @@ Open `/` for mandate, progress bar, kanban columns, and agent roster. Prefer the
 | POST | `/v1/tickets/:id/done` | Mark done |
 | GET | `/v1/board` | Full board (UI) |
 | GET | `/v1/help` | Compact ops guide |
+| GET | `/health` | Fly health check |
