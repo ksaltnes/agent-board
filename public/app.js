@@ -1,10 +1,25 @@
 const colsEl = document.getElementById('cols');
 const agentsEl = document.getElementById('agents');
+const tokenInput = document.getElementById('board-token');
 const STATUSES = ['todo', 'doing', 'blocked', 'done'];
+
+if (tokenInput) {
+  tokenInput.value = localStorage.getItem('boardToken') || '';
+  tokenInput.addEventListener('change', () => {
+    localStorage.setItem('boardToken', tokenInput.value.trim());
+  });
+}
+
+function apiHeaders(extra) {
+  const h = { 'Content-Type': 'application/json', ...extra };
+  const t = (tokenInput?.value || localStorage.getItem('boardToken') || '').trim();
+  if (t) h['X-Board-Token'] = t;
+  return h;
+}
 
 async function api(path, opts) {
   const r = await fetch(path, {
-    headers: { 'Content-Type': 'application/json', ...(opts?.headers || {}) },
+    headers: apiHeaders(opts?.headers),
     ...opts,
   });
   const j = await r.json();
