@@ -40,21 +40,25 @@ try {
 
   // HTTP checks if server up
   const port = process.env.PORT || 3847;
+  const hdr = { 'Content-Type': 'application/json' };
+  if (process.env.BOARD_TOKEN) hdr['X-Board-Token'] = process.env.BOARD_TOKEN;
   try {
     const r = await fetch(`http://127.0.0.1:${port}/v1/ctx?a=builder`);
     if (r.ok) {
       const j = await r.json();
       assert(j.m && j.open, 'http ctx');
+      const h = await fetch(`http://127.0.0.1:${port}/health`);
+      assert(h.ok, 'health');
       const c = await fetch(`http://127.0.0.1:${port}/v1/tickets`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: hdr,
         body: JSON.stringify({ t: 'HTTP smoke', p: 2 }),
       });
       const created = await c.json();
       assert(created.ok === 1 && created.id, 'http create ack minimal');
       const p = await fetch(`http://127.0.0.1:${port}/v1/tickets/${created.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: hdr,
         body: JSON.stringify({ s: 'done', n: 'x' }),
       });
       const patched = await p.json();
