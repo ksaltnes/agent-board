@@ -1,0 +1,6 @@
+.git
+.github
+*.md
+.gitignore
+node_modules
+data/board.json.tmp
