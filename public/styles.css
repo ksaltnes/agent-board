@@ -69,6 +69,23 @@ body {
   color: var(--ink-soft);
   font-size: 0.95rem;
 }
+.token-box {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  margin-left: auto;
+}
+.token-box input {
+  width: 9.5rem;
+  border: 1px solid var(--line);
+  border-radius: 0.45rem;
+  padding: 0.35rem 0.5rem;
+  font: inherit;
+  background: white;
+}
 
 main {
   max-width: 1100px;
