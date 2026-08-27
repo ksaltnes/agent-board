@@ -86,6 +86,35 @@ body {
   font: inherit;
   background: white;
 }
+.token-box button {
+  padding: 0.35rem 0.65rem;
+  font-size: 0.72rem;
+}
+.lock-panel {
+  background: color-mix(in oklab, white 78%, transparent);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  padding: 1.15rem 1.25rem 1.25rem;
+  backdrop-filter: blur(8px);
+}
+.lock-panel p {
+  margin: 0.4rem 0 0;
+  color: var(--ink-soft);
+}
+.lock-err {
+  color: var(--blocked);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+}
+body.locked .mandate,
+body.locked .progress-block,
+body.locked .board,
+body.locked .agents {
+  display: none;
+}
+body:not(.locked) .lock-panel {
+  display: none;
+}
 
 main {
   max-width: 1100px;

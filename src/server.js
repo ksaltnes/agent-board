@@ -13,12 +13,13 @@ import {
   claimTicket,
   patchMandate,
 } from './store.js';
+import { isAuthorized } from './auth.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(__dirname, '..', 'public');
 const PORT = Number(process.env.PORT || 3847);
 const TOKEN = process.env.BOARD_TOKEN || '';
-const WRITE = new Set(['POST', 'PATCH', 'PUT', 'DELETE']);
+const PRODUCTION = process.env.NODE_ENV === 'production';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -75,19 +76,8 @@ function match(url, pattern) {
   return params;
 }
 
-function authorized(req) {
-  if (!TOKEN) return true;
-  const h = req.headers.authorization || '';
-  const bearer = h.startsWith('Bearer ') ? h.slice(7) : '';
-  const x = req.headers['x-board-token'] || '';
-  return bearer === TOKEN || x === TOKEN;
-}
-
 async function api(req, res, path, query) {
   try {
-    if (WRITE.has(req.method) && !authorized(req)) {
-      return send(res, 401, { err: 'token required' });
-    }
     if (req.method === 'GET' && path === '/v1/ctx') {
       const board = load();
       return send(res, 200, ctxPack(board, query.a || null));
@@ -170,7 +160,9 @@ async function api(req, res, path, query) {
           claim: 'POST /v1/tickets/T2/claim {"a":"builder"}',
           done: 'POST /v1/tickets/T2/done {"n":"shipped"}',
           mandate: 'PATCH /v1/mandate {"f":"new focus"}',
-          auth: TOKEN ? 'write: Authorization: Bearer $BOARD_TOKEN' : 'open',
+          auth: TOKEN
+            ? 'Authorization: Bearer $BOARD_TOKEN or X-Board-Token'
+            : 'open (non-production; set BOARD_TOKEN to lock)',
         },
         keys: { t: 'title', s: 'status', a: 'agent', p: 'priority', d: 'deps', n: 'note≤140', g: 'goal', f: 'focus' },
       });
@@ -204,6 +196,9 @@ const server = createServer(async (req, res) => {
     return res.end('{"ok":1}');
   }
   if (u.pathname.startsWith('/v1/')) {
+    if (!isAuthorized(req)) {
+      return send(res, 401, { err: 'token required' });
+    }
     const query = Object.fromEntries(u.searchParams);
     return api(req, res, u.pathname, query);
   }
@@ -214,5 +209,11 @@ const server = createServer(async (req, res) => {
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`agent-board http://0.0.0.0:${PORT}`);
-  console.log(`bots: GET /v1/ctx  |  help: GET /v1/help${TOKEN ? '  |  writes: BOARD_TOKEN' : ''}`);
+  if (!TOKEN && PRODUCTION) {
+    console.log('BOARD_TOKEN missing — board locked (fail-closed)');
+  } else {
+    console.log(
+      `bots: GET /v1/ctx  |  help: GET /v1/help${TOKEN ? '  |  auth: BOARD_TOKEN' : ''}`,
+    );
+  }
 });
