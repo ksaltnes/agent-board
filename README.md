@@ -36,16 +36,18 @@ fly deploy
 fly open
 ```
 
-Bots:
+Bots (reads and writes need the same token):
 
 ```http
 GET https://<app>.fly.dev/v1/ctx?a=builder
+Authorization: Bearer $BOARD_TOKEN
+
 POST https://<app>.fly.dev/v1/tickets/T2/claim
 Authorization: Bearer $BOARD_TOKEN
 {"a":"builder"}
 ```
 
-UI: paste the same token in the header field (stored in the browser). Reads stay public; writes need the token when `BOARD_TOKEN` is set.
+UI: paste the same token in the header field and click **Åpne**. The token stays in the input for this tab only (not `localStorage`). Production refuses all board routes if `BOARD_TOKEN` is unset; only `GET /health` stays public. Do not put a real token in git, CI, or Fly config files — use `fly secrets set`.
 
 CI: add repo secret `FLY_API_TOKEN` (`fly tokens create deploy`) so pushes to `main` deploy via [`.github/workflows/fly.yml`](.github/workflows/fly.yml).
 
@@ -54,6 +56,7 @@ CI: add repo secret `FLY_API_TOKEN` (`fly tokens create deploy`) so pushes to `m
 1. **Pull context once**
    ```http
    GET /v1/ctx?a=builder
+   Authorization: Bearer $BOARD_TOKEN
    ```
    Returns mandate (`m`), progress (`p`), open tickets, `mine`, and `claimable`.
 
@@ -92,7 +95,7 @@ Statuses: `todo` | `doing` | `blocked` | `done`.
 
 ## Human UI
 
-Open `/` for mandate, progress bar, kanban columns, and agent roster. Prefer the UI for overview; prefer `/v1/ctx` + PATCH for bots.
+Open `/` and unlock with `BOARD_TOKEN` to see mandate, progress bar, kanban columns, and agent roster. Prefer the UI for overview; prefer `/v1/ctx` + PATCH for bots. The HTML shell loads without a token; board data does not.
 
 ## Why this shape
 

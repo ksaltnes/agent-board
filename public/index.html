@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/styles.css" />
 </head>
-<body>
+<body class="locked">
   <div class="bg" aria-hidden="true"></div>
   <header class="top">
     <div class="brand">
@@ -17,13 +17,19 @@
       <h1>Agent Board</h1>
     </div>
     <p class="tag">Delt mandat · kompakt kontekst · lav tokenbruk</p>
-    <label class="token-box">
-      <span>Token</span>
+    <form class="token-box" id="unlock-form">
+      <label for="board-token">Token</label>
       <input id="board-token" type="password" autocomplete="off" placeholder="BOARD_TOKEN" />
-    </label>
+      <button type="submit" id="unlock">Åpne</button>
+    </form>
   </header>
 
   <main>
+    <section class="lock-panel" id="lock-panel">
+      <h2>Låst</h2>
+      <p>Lim inn BOARD_TOKEN og åpne for å laste boardet. Tokenet holdes bare i denne fanen.</p>
+      <p class="lock-err" id="lock-err" hidden></p>
+    </section>
     <section class="mandate" id="mandate">
       <div class="mandate-head">
         <h2>Mandat</h2>

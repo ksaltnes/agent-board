@@ -1,20 +1,35 @@
 const colsEl = document.getElementById('cols');
 const agentsEl = document.getElementById('agents');
 const tokenInput = document.getElementById('board-token');
+const lockErr = document.getElementById('lock-err');
 const STATUSES = ['todo', 'doing', 'blocked', 'done'];
-
-if (tokenInput) {
-  tokenInput.value = localStorage.getItem('boardToken') || '';
-  tokenInput.addEventListener('change', () => {
-    localStorage.setItem('boardToken', tokenInput.value.trim());
-  });
-}
+let pollTimer = null;
 
 function apiHeaders(extra) {
   const h = { 'Content-Type': 'application/json', ...extra };
-  const t = (tokenInput?.value || localStorage.getItem('boardToken') || '').trim();
+  const t = (tokenInput?.value || '').trim();
   if (t) h['X-Board-Token'] = t;
   return h;
+}
+
+function setLocked(locked, message) {
+  document.body.classList.toggle('locked', locked);
+  if (lockErr) {
+    lockErr.hidden = !message;
+    lockErr.textContent = message || '';
+  }
+  if (locked) {
+    if (pollTimer) {
+      clearInterval(pollTimer);
+      pollTimer = null;
+    }
+    return;
+  }
+  if (!pollTimer) pollTimer = setInterval(() => {
+    refresh().catch((err) => {
+      setLocked(true, err.message === 'token required' ? 'Ugyldig eller manglende token' : err.message);
+    });
+  }, 8000);
 }
 
 async function api(path, opts) {
@@ -110,6 +125,7 @@ async function refresh() {
   });
   renderTickets(board.tickets);
   renderAgents(board.agents);
+  setLocked(false);
 }
 
 colsEl.addEventListener('click', async (e) => {
@@ -178,5 +194,15 @@ form.addEventListener('submit', async (e) => {
   await refresh();
 });
 
-refresh();
-setInterval(refresh, 8000);
+document.getElementById('unlock-form')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    await refresh();
+  } catch (err) {
+    setLocked(true, err.message === 'token required' ? 'Ugyldig eller manglende token' : err.message);
+  }
+});
+
+refresh().catch((err) => {
+  setLocked(true, err.message === 'token required' ? 'Skriv inn token for å åpne boardet' : err.message);
+});

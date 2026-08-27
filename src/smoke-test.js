@@ -43,12 +43,17 @@ try {
   const hdr = { 'Content-Type': 'application/json' };
   if (process.env.BOARD_TOKEN) hdr['X-Board-Token'] = process.env.BOARD_TOKEN;
   try {
-    const r = await fetch(`http://127.0.0.1:${port}/v1/ctx?a=builder`);
-    if (r.ok) {
+    const h = await fetch(`http://127.0.0.1:${port}/health`);
+    assert(h.ok, 'health');
+    assert((await h.json()).ok === 1, 'health body');
+    const denied = await fetch(`http://127.0.0.1:${port}/v1/ctx?a=builder`);
+    const r = await fetch(`http://127.0.0.1:${port}/v1/ctx?a=builder`, { headers: hdr });
+    if (denied.status === 401 && r.status === 401 && !process.env.BOARD_TOKEN) {
+      console.log('http locked without token — store-only tests passed');
+    } else if (r.ok) {
+      if (process.env.BOARD_TOKEN) assert(denied.status === 401, 'unauthenticated ctx denied');
       const j = await r.json();
       assert(j.m && j.open, 'http ctx');
-      const h = await fetch(`http://127.0.0.1:${port}/health`);
-      assert(h.ok, 'health');
       const c = await fetch(`http://127.0.0.1:${port}/v1/tickets`, {
         method: 'POST',
         headers: hdr,
